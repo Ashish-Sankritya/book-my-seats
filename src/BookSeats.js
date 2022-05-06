@@ -91,7 +91,28 @@ export default function BookSeats() {
   const [bookedSeats, setBookedSeats] = useState([]);
   const [bookedStatus, setBookedStatus] = useState("");
   let booked = [];
-
+  const optimumBooking = (optimumRow, toBook) => {
+    let count = 0;
+    let temp = [];
+    for (let row = optimumRow; row < 12; row++) {
+      for (let col = 0; col < SEATS[row].length; col++) {
+        if (availableSeats.includes(SEATS[row][col])) {
+          count++;
+          temp.push(SEATS[row][col]);
+          if (count === toBook) {
+            let n = toBook;
+            while (n--) {
+              bookedSeats.push(temp.shift());
+            }
+            const newAvailable = availableSeats.filter(
+              (seat) => !bookedSeats.includes(seat)
+            );
+            setAvailableSeats(newAvailable);
+          }
+        }
+      }
+    }
+  };
   const confirmBooking = () => {
     let toBook = parseInt(numberOfSeats, 10);
     if (toBook > 7) {
@@ -107,36 +128,58 @@ export default function BookSeats() {
 
     if (availableSeats.length !== 0) {
       let flag = true;
+      let flag2 = true;
+      let optimumRow;
+      let optimumCount = 0;
 
-      for (let row = 0; row < 12; row++) {
-        let counter = 0;
+      for (let i = 0; i < 12; i++) {
+        for (let j = 0; j < SEATS[i].length; j++) {
+          if (availableSeats.includes(SEATS[i][j])) {
+            optimumCount++;
+          }
+        }
+        ///
+        if (optimumCount === parseInt(numberOfSeats, 10)) {
+          optimumRow = i;
+          flag2 = false;
 
-        for (let col = 0; col < 7; col++) {
-          if (availableSeats.includes(SEATS[row][col])) {
-            counter++;
+          // call function
+          optimumBooking(optimumRow, parseInt(numberOfSeats, 10));
+        } else optimumCount = 0;
+        if (!flag2) break;
+      }
+      //
+      if (flag2) {
+        for (let row = 0; row < 12; row++) {
+          let counter = 0;
 
-            booked.push(SEATS[row][col]);
+          for (let col = 0; col < SEATS[row].length; col++) {
+            if (availableSeats.includes(SEATS[row][col])) {
+              counter++;
+              optimumCount++;
 
-            if (counter === toBook) {
-              //updating ui and alloting seats
+              booked.push(SEATS[row][col]);
 
-              flag = false;
-              while (toBook--) {
-                bookedSeats.push(booked.shift());
+              if (counter === toBook) {
+                //updating ui and alloting seats
+
+                flag = false;
+                while (toBook--) {
+                  bookedSeats.push(booked.shift());
+                }
+                const newAvailable = availableSeats.filter(
+                  (seat) => !bookedSeats.includes(seat)
+                );
+                setAvailableSeats(newAvailable);
               }
-              const newAvailable = availableSeats.filter(
-                (seat) => !bookedSeats.includes(seat)
-              );
-              setAvailableSeats(newAvailable);
+            } else {
+              counter = 0;
+              booked = [];
             }
-          } else {
-            counter = 0;
-            booked = [];
           }
         }
       }
-
-      if (flag === true) {
+      if (flag === true && flag2) {
         //When all seats are not found in a single row
         const newAvailable = availableSeats.filter(
           (seat) => !bookedSeats.includes(seat)
